@@ -1,0 +1,23 @@
+name: join-audio
+on:
+  workflow_dispatch:
+  push:
+    paths: ["parts/*/READY"]
+permissions:
+  contents: write
+jobs:
+  join:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Join parts and publish release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for d in parts/*/; do
+            s=$(basename "$d")
+            [ -f "$d/READY" ] || continue
+            gh release view "endsem-$s" >/dev/null 2>&1 && continue
+            cat "$d"/part-* > "$s.mp3"
+            gh release create "endsem-$s" "$s.mp3" --title "End-sem: $s" --notes "Audio for Eklavya's End-Sem Notes"
+          done
